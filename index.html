@@ -348,8 +348,10 @@
   .gallery-slide img,
   .gallery-slide video {
     width:100%; height:100%;
-    object-fit:cover; object-position:center top;
+    object-fit:contain;   /* show full photo — no cropping */
+    object-position:center center;
     display:block;
+    background:#000;
   }
   .gallery-overlay {
     position:absolute; inset:0;
@@ -1083,34 +1085,44 @@ function clearGalleryAuto(){ clearInterval(galAuto); }
    while user is looking at a scene
 ══════════════════════════════════════════════════ */
 const SCENES = ['scene-hero','scene-about','scene-gallery','scene-letter','scene-game','scene-wish'];
-const DWELL  = [6000, 9000, 16000, 12000, 99999, 99999]; // ms per scene (game/wish = manual)
-let   sceneIdx    = 0;
-let   autoScrollT = null;
+// How long to stay on each scene before auto-advancing (ms). 99999 = no auto-advance.
+const DWELL  = [7000, 9000, 16000, 13000, 99999, 99999];
 
-function goScene(i){
-  sceneIdx = Math.max(0, Math.min(i, SCENES.length-1));
-  document.getElementById(SCENES[sceneIdx])
-    .scrollIntoView({behavior:'smooth', block:'start'});
-  updateDots(sceneIdx);
-  resetAutoScroll();
-}
-
-window.goScene = goScene;
-
-function resetAutoScroll(){
-  clearTimeout(autoScrollT);
-  if(sceneIdx < SCENES.length-1 && DWELL[sceneIdx] < 99999){
-    autoScrollT = setTimeout(()=>{
-      sceneIdx++;
-      goScene(sceneIdx);
-    }, DWELL[sceneIdx]);
-  }
-}
+/* ── Auto-scroll: purely sequential, completely separate from IO ── */
+let autoStep  = 0;      // which scene we are auto-advancing FROM
+let autoTimer = null;
 
 function startAutoScroll(){
-  sceneIdx = 0;
-  resetAutoScroll();
+  autoStep = 0;
+  clearTimeout(autoTimer);
+  scheduleNextScene();
 }
+
+function scheduleNextScene(){
+  clearTimeout(autoTimer);
+  const dwell = DWELL[autoStep];
+  if(dwell >= 99999 || autoStep >= SCENES.length - 1) return; // stop
+  autoTimer = setTimeout(()=>{
+    autoStep++;
+    scrollToScene(autoStep);
+    scheduleNextScene();
+  }, dwell);
+}
+
+/* ── Scroll to a scene by index (smooth) ── */
+function scrollToScene(i){
+  const el = document.getElementById(SCENES[i]);
+  if(el) el.scrollIntoView({ behavior:'smooth', block:'start' });
+  updateDots(i);
+}
+
+/* ── Manual navigation from dots — pauses auto-scroll ── */
+function goScene(i){
+  i = Math.max(0, Math.min(i, SCENES.length - 1));
+  clearTimeout(autoTimer);   // stop auto-scroll when user navigates manually
+  scrollToScene(i);
+}
+window.goScene = goScene;
 
 function updateDots(i){
   document.querySelectorAll('#progress-dots .dot').forEach((d,j)=>{
@@ -1119,7 +1131,9 @@ function updateDots(i){
 }
 
 /* ══════════════════════════════════════════════════
-   INTERSECTION OBSERVER — update dot + trigger animations
+   INTERSECTION OBSERVER
+   ONLY handles: per-scene CSS animations + dot highlight
+   Does NOT touch auto-scroll at all
 ══════════════════════════════════════════════════ */
 function initScrollObserver(){
   const io = new IntersectionObserver(entries=>{
@@ -1127,26 +1141,32 @@ function initScrollObserver(){
       if(!e.isIntersecting) return;
       const id  = e.target.id;
       const idx = SCENES.indexOf(id);
-      if(idx>=0){ updateDots(idx); sceneIdx=idx; }
 
-      // Per-scene animations
-      if(id==='scene-about')
+      // Highlight the correct dot
+      if(idx >= 0) updateDots(idx);
+
+      // Per-scene entrance animations
+      if(id === 'scene-about')
         e.target.querySelectorAll('.card').forEach((c,i)=>{
-          setTimeout(()=>c.classList.add('visible'), i*120);
+          setTimeout(()=> c.classList.add('visible'), i * 130);
         });
-      if(id==='scene-letter')
+      if(id === 'scene-letter')
         document.getElementById('letter-wrap').classList.add('visible');
-      if(id==='scene-wish'){
+      if(id === 'scene-wish'){
         document.getElementById('wish-inner').classList.add('visible');
         startWishParticles();
       }
     });
-  }, { threshold:0.45 });
+  // High threshold so it only fires when the section is truly front-and-centre
+  }, { threshold: 0.6 });
 
-  SCENES.forEach(id=>{
-    const el = document.getElementById(id);
-    if(el) io.observe(el);
-  });
+  // Observe with a small delay so the initial render doesn't trigger false fires
+  setTimeout(()=>{
+    SCENES.forEach(id=>{
+      const el = document.getElementById(id);
+      if(el) io.observe(el);
+    });
+  }, 500);
 }
 
 /* ══════════════════════════════════════════════════
