@@ -691,8 +691,8 @@
 
 <!-- ── BACKGROUND VIDEOS ── -->
 <div id="site-video-wrap">
-  <video id="bg-vid-blur" autoplay muted playsinline></video>
-  <video id="bg-vid"      autoplay muted playsinline></video>
+  <video id="bg-vid-blur" muted playsinline preload="none"></video>
+  <video id="bg-vid"      muted playsinline preload="none"></video>
 </div>
 
 <!-- ── MUSIC ── -->
@@ -910,21 +910,39 @@ function showErr(el,msg){
 
 /* ─────────────────────────────────────────────
    YOUTUBE MUSIC  (Perfect — Ed Sheeran)
+   API script loads immediately so the player
+   is warmed up before login completes.
+   playWhenReady flag triggers play the moment
+   the correct code is entered.
 ───────────────────────────────────────────── */
-let ytPlayer=null,ytReady=false,musicOn=true;
-function loadYT(){
+let ytPlayer=null, ytReady=false, musicOn=false, playWhenReady=false;
+
+/* Load API script right away — no autoplay yet */
+(function(){
   const t=document.createElement('script');
   t.src='https://www.youtube.com/iframe_api';
   document.head.appendChild(t);
-}
+})();
+
 window.onYouTubeIframeAPIReady=function(){
   ytPlayer=new YT.Player('yt-player',{
     height:'1',width:'1',
     videoId:'2Vv-BfVoq4g',
-    playerVars:{autoplay:1,loop:1,controls:0,playlist:'2Vv-BfVoq4g',mute:0},
-    events:{onReady:e=>{e.target.setVolume(30);e.target.playVideo();ytReady=true;}}
+    playerVars:{autoplay:0,loop:1,controls:0,playlist:'2Vv-BfVoq4g',mute:0},
+    events:{onReady:e=>{
+      e.target.setVolume(30);
+      ytReady=true;
+      if(playWhenReady){ e.target.playVideo(); musicOn=true; }
+    }}
   });
 };
+
+/* Called on correct login — plays immediately if ready, otherwise plays on init */
+function loadYT(){
+  playWhenReady=true;
+  if(ytReady&&ytPlayer){ ytPlayer.playVideo(); musicOn=true; }
+}
+
 function toggleMusic(){
   const fab=document.getElementById('music-fab');
   if(!ytPlayer||!ytReady) return;
@@ -1024,14 +1042,15 @@ function buildGallery(){
     let media;
     if(m.type === 'video'){
       media = document.createElement('video');
-      media.src = m.src;
+      /* store src in data-src — only load it when the slide goes active */
+      media.dataset.src = m.src;
       media.muted = true; media.playsInline = true; media.loop = true;
-      media.preload = 'metadata';
-      if(i===0){ media.autoplay = true; media.play().catch(()=>{}); }
+      media.preload = 'none';
     } else {
       media = document.createElement('img');
       media.src = m.src; media.alt = 'Antoinette';
       media.loading = i===0 ? 'eager' : 'lazy';
+      media.decoding = 'async';
     }
 
     const line = document.createElement('div');
@@ -1066,7 +1085,7 @@ function buildGallery(){
 
 function gShow(i){
   const slides = document.querySelectorAll('.g-slide');
-  /* pause any playing video on the current slide */
+  /* pause any playing video on the outgoing slide */
   const prevVid = slides[gIdx].querySelector('video');
   if(prevVid){ prevVid.pause(); }
 
@@ -1074,9 +1093,25 @@ function gShow(i){
   gIdx = (i + MEDIA.length) % MEDIA.length;
   slides[gIdx].classList.add('active');
 
-  /* play video on the new slide */
+  /* lazy-load + play video on the incoming slide */
   const nextVid = slides[gIdx].querySelector('video');
-  if(nextVid){ nextVid.currentTime = 0; nextVid.play().catch(()=>{}); }
+  if(nextVid){
+    if(!nextVid.src && nextVid.dataset.src){
+      /* first time — set the real src and load it */
+      nextVid.src = nextVid.dataset.src;
+      nextVid.load();
+    }
+    nextVid.currentTime = 0;
+    nextVid.play().catch(()=>{});
+  }
+
+  /* also preload the next-next slide's video quietly */
+  const preloadIdx = (gIdx + 1) % MEDIA.length;
+  const preVid = slides[preloadIdx] && slides[preloadIdx].querySelector('video');
+  if(preVid && !preVid.src && preVid.dataset.src){
+    preVid.src = preVid.dataset.src;
+    preVid.load();
+  }
 
   updateGCounter();
   updateGProgress();
