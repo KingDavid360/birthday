@@ -308,99 +308,148 @@
   }
 
   /* ═══════════════════════════════════
-     SECTION: GALLERY (full-screen world)
+     SECTION: GALLERY — a new world
   ═══════════════════════════════════ */
   #gallery {
-    /* Takes the full viewport — its own world */
     height:100vh;
     position:relative;
     overflow:hidden;
-    padding:0;
-    /* Sits above the video bg so it can have its own backdrop */
-    z-index:11;
-    background:#000;
+    padding:0; z-index:11;
+    /* deep space — completely its own atmosphere */
+    background:radial-gradient(ellipse at 50% 60%,
+      #140828 0%, #07030f 60%, #000 100%);
   }
 
-  /* Each photo slide */
+  /* Ambient colour glow that shifts with each slide */
+  #gallery::before {
+    content:'';
+    position:absolute; inset:0; z-index:0; pointer-events:none;
+    background:radial-gradient(ellipse at 50% 50%,
+      rgba(192,132,252,.12) 0%,
+      rgba(212,169,106,.06) 40%,
+      transparent 70%);
+    animation:glowPulse 6s ease-in-out infinite;
+  }
+
+  /* Each slide */
   .g-slide {
-    position:absolute; inset:0;
+    position:absolute; inset:0; z-index:1;
+    display:flex; align-items:center; justify-content:center;
     opacity:0;
-    transition:opacity 1.1s ease;
+    transition:opacity 1.3s ease;
   }
   .g-slide.active { opacity:1; }
+
+  /* Photo — contained, with a soft glow halo */
   .g-slide img {
-    width:100%; height:100%;
-    object-fit:contain;          /* full photo, no crop */
-    object-position:center;
+    max-width:min(480px, 88vw);
+    max-height:80vh;
+    width:auto; height:auto;
     display:block;
-    background:#000;
+    object-fit:contain;
+    /* Glow ring around photo */
+    filter:drop-shadow(0 0 40px rgba(192,132,252,.25))
+           drop-shadow(0 0 80px rgba(212,169,106,.1));
+    animation:none;
+    transition:filter 1.3s ease;
   }
-  /* Subtle vignette so edges breathe */
-  .g-slide::after {
+  .g-slide.active img {
+    filter:drop-shadow(0 0 50px rgba(192,132,252,.35))
+           drop-shadow(0 0 100px rgba(212,169,106,.15));
+  }
+
+  /* Dark fade at top and bottom — keeps it immersive */
+  #gallery::after {
     content:'';
-    position:absolute; inset:0; pointer-events:none;
-    background:radial-gradient(ellipse at center,
-      transparent 55%,
-      rgba(0,0,0,.55) 100%);
+    position:absolute; inset:0; z-index:2; pointer-events:none;
+    background:linear-gradient(
+      to bottom,
+      rgba(7,3,15,1) 0%,
+      transparent 12%,
+      transparent 82%,
+      rgba(7,3,15,1) 100%
+    );
   }
+
+  /* World entrance veil — fades away when gallery enters viewport */
+  #gallery-veil {
+    position:absolute; inset:0; z-index:6;
+    background:#07030f;
+    transition:opacity 1.2s ease;
+    pointer-events:none;
+  }
+  #gallery-veil.lifted { opacity:0; }
 
   /* Top label */
   .gallery-world-label {
-    position:absolute; top:2rem; left:50%;
+    position:absolute; top:1.8rem; left:50%;
     transform:translateX(-50%);
-    z-index:3;
-    font-size:.62rem; letter-spacing:.28em; text-transform:uppercase;
-    color:rgba(255,255,255,.35); white-space:nowrap;
+    z-index:5;
+    font-size:.58rem; letter-spacing:.32em; text-transform:uppercase;
+    color:rgba(255,255,255,.2); white-space:nowrap;
   }
 
-  /* Caption */
+  /* Caption — elegant, centred under photo */
   .g-caption {
-    position:absolute; bottom:4rem; left:50%;
+    position:absolute; bottom:5.5rem; left:50%;
     transform:translateX(-50%);
-    z-index:3; text-align:center;
-    font-family:'Cormorant Garamond',serif;
-    font-size:clamp(1rem,2.5vw,1.5rem);
-    font-style:italic; color:rgba(255,255,255,.6);
-    opacity:0; transition:opacity .8s .5s;
-    white-space:nowrap;
+    z-index:5; text-align:center; white-space:nowrap;
+    font-family:'Cormorant Garamond',serif; font-style:italic;
+    font-size:clamp(1rem,2.2vw,1.4rem);
+    color:rgba(255,255,255,.4);
+    letter-spacing:.04em;
+    opacity:0; transition:opacity 1s .7s;
   }
   .g-slide.active .g-caption { opacity:1; }
 
-  /* Prev / Next */
+  /* Thin gold line above caption */
+  .g-cap-line {
+    position:absolute; bottom:7.8rem; left:50%;
+    transform:translateX(-50%);
+    width:30px; height:1px;
+    background:linear-gradient(to right, transparent, rgba(212,169,106,.4), transparent);
+    z-index:5; opacity:0; transition:opacity 1s .5s;
+  }
+  .g-slide.active .g-cap-line { opacity:1; }
+
+  /* Arrows */
   .g-arrow {
-    position:absolute; top:50%; z-index:4;
+    position:absolute; top:50%; z-index:5;
     transform:translateY(-50%);
     background:none; border:none;
-    color:rgba(255,255,255,.25); font-size:2.5rem;
-    cursor:pointer; padding:.5rem 1rem;
-    transition:color .2s; line-height:1;
-    font-weight:200;
+    color:rgba(255,255,255,.18); font-size:2.8rem;
+    cursor:pointer; padding:.5rem 1.2rem;
+    transition:color .3s; line-height:1; font-weight:200;
   }
-  .g-arrow:hover { color:rgba(255,255,255,.7); }
-  .g-arrow.left  { left:.5rem; }
-  .g-arrow.right { right:.5rem; }
+  .g-arrow:hover { color:rgba(255,255,255,.65); }
+  .g-arrow.left  { left:.2rem; }
+  .g-arrow.right { right:.2rem; }
 
-  /* Progress dots */
-  .g-dots {
-    position:absolute; bottom:1.8rem; left:50%;
+  /* Progress bar (replaces dots) */
+  .g-progress-wrap {
+    position:absolute; bottom:2.4rem; left:50%;
     transform:translateX(-50%);
-    display:flex; gap:.6rem; z-index:4;
+    width:120px; height:1px;
+    background:rgba(255,255,255,.12);
+    z-index:5;
   }
-  .g-dot {
-    width:4px; height:4px; border-radius:50%;
-    background:rgba(255,255,255,.25); cursor:pointer;
-    transition:background .3s, transform .3s;
-  }
-  .g-dot.active {
-    background:rgba(255,255,255,.8);
-    transform:scale(1.4);
+  #g-progress-bar {
+    height:100%;
+    background:linear-gradient(to right, rgba(212,169,106,.7), rgba(192,132,252,.7));
+    transition:width .4s ease;
+    width:0%;
   }
 
-  /* Slide counter */
+  /* Counter */
   .g-counter {
-    position:absolute; top:2rem; right:2rem; z-index:4;
-    font-size:.62rem; letter-spacing:.14em;
-    color:rgba(255,255,255,.25);
+    position:absolute; top:1.8rem; right:2rem; z-index:5;
+    font-size:.58rem; letter-spacing:.16em;
+    color:rgba(255,255,255,.18);
+  }
+
+  @keyframes glowPulse {
+    0%,100% { opacity:.7; transform:scale(1); }
+    50%      { opacity:1;  transform:scale(1.05); }
   }
 
   /* ═══════════════════════════════════
@@ -675,34 +724,37 @@
       <div class="about-item">
         <span class="about-num">01</span>
         <h3>Her Energy</h3>
-        <p>Warm, magnetic, effortlessly herself. The kind of person who makes a room feel lighter the moment she walks in — without even trying.</p>
+        <p>There is a warmth to her that feels rare — the kind that shows up in how she treats people, how she listens, how she notices the things others overlook. Her personality draws you in before she has even said a word, and her soul is the kind that lingers with you long after she has left the room.</p>
       </div>
       <div class="about-item">
         <span class="about-num">02</span>
         <h3>Her Laugh</h3>
-        <p>Genuine and rare enough that when you earn it, you remember it. There is something about it that disarms people completely.</p>
+        <p>Honest, unguarded, and entirely beautiful — it lights up everything around it. Once you have heard it, you find yourself choosing your words more carefully, hoping without meaning to that something you say might bring it out again. It has quietly become one of the things I look forward to most.</p>
       </div>
       <div class="about-item">
         <span class="about-num">03</span>
         <h3>Her Mind</h3>
-        <p>Thoughtful and curious — the kind you want to still be in conversation with at 2 a.m., about nothing in particular and everything at once.</p>
+        <p>Curious, layered, and entirely captivating. She moves through a conversation — about everything and nothing — with a quiet depth that makes you lose track of the time. I would stay up until 2 a.m. just to keep listening. Not because it is expected, but because nowhere else would feel worth being.</p>
       </div>
       <div class="about-item">
         <span class="about-num">04</span>
         <h3>Her Soul</h3>
-        <p>She makes you want to be a better person — not by saying it, simply by being exactly who she is. That quality is rarer than she knows.</p>
+        <p>She moves through life with a quiet fire — fully invested in the things she believes in, unhurried but deeply intentional. Being around that kind of passion has a way of holding up a mirror. It makes you want to show up more fully in your own life, to be more, simply because she reminds you that it is possible.</p>
       </div>
     </div>
   </section>
 
   <!-- ── GALLERY (full-screen world) ── -->
   <section id="gallery">
+    <div id="gallery-veil"></div>
     <span class="gallery-world-label">Her World &nbsp;·&nbsp; 06 Frames</span>
     <span class="g-counter" id="g-counter">01 / 06</span>
     <!-- Slides injected by JS -->
     <button class="g-arrow left"  onclick="gNav(-1)">&#8249;</button>
     <button class="g-arrow right" onclick="gNav(1)">&#8250;</button>
-    <div class="g-dots" id="g-dots"></div>
+    <div class="g-progress-wrap">
+      <div id="g-progress-bar"></div>
+    </div>
   </section>
 
   <!-- ── GAME ── -->
@@ -894,6 +946,7 @@ function launchSite(){
   document.getElementById('music-fab').classList.add('show');
   startVideoCycle();
   buildGallery();
+  initGalleryObserver();
   initObserver();
 }
 
@@ -921,70 +974,97 @@ function startVideoCycle(){
    Photos 1-4, 7, 8  (5 & 6 excluded)
 ───────────────────────────────────────────── */
 const PHOTOS = [
-  { src:'assets/photos/photo7.jpg', cap:'Angel energy 💕' },
+  { src:'assets/photos/photo7.jpg', cap:'Angel energy'    },
   { src:'assets/photos/photo4.jpg', cap:'That smile'      },
   { src:'assets/photos/photo1.jpg', cap:'Vibe of the day' },
   { src:'assets/photos/photo3.jpg', cap:'Golden hour'     },
   { src:'assets/photos/photo2.jpg', cap:'Effortlessly her'},
   { src:'assets/photos/photo8.jpg', cap:'Serene'          },
 ];
-let gIdx = 0, gAuto = null;
+let gIdx = 0, gAuto = null, gDuration = 4500;
 
 function buildGallery(){
   const section = document.getElementById('gallery');
-  const dotsWrap = document.getElementById('g-dots');
 
   PHOTOS.forEach((p, i)=>{
-    /* slide */
     const slide = document.createElement('div');
     slide.className = 'g-slide' + (i===0 ? ' active' : '');
+
     const img = document.createElement('img');
-    img.src = p.src; img.alt = 'Antoinette'; img.loading = 'lazy';
+    img.src = p.src; img.alt = 'Antoinette';
+    img.loading = i===0 ? 'eager' : 'lazy';
+
+    const line = document.createElement('div');
+    line.className = 'g-cap-line';
+
     const cap = document.createElement('div');
     cap.className = 'g-caption'; cap.textContent = p.cap;
-    slide.appendChild(img); slide.appendChild(cap);
-    /* insert before the first button so arrows stay on top */
-    section.insertBefore(slide, section.querySelector('.g-arrow'));
 
-    /* dot */
-    const dot = document.createElement('div');
-    dot.className = 'g-dot' + (i===0 ? ' active' : '');
-    dot.onclick = ()=>{ clearInterval(gAuto); gShow(i); startGAuto(); };
-    dotsWrap.appendChild(dot);
+    slide.appendChild(img);
+    slide.appendChild(line);
+    slide.appendChild(cap);
+    section.insertBefore(slide, section.querySelector('.g-arrow'));
   });
 
   updateGCounter();
   startGAuto();
 
-  /* swipe support on mobile */
-  let tx=0;
-  const sec = document.getElementById('gallery');
-  sec.addEventListener('touchstart', e=>{ tx=e.touches[0].clientX; }, {passive:true});
-  sec.addEventListener('touchend',   e=>{
+  /* lift the entrance veil after a short breath */
+  setTimeout(()=>{
+    const veil = document.getElementById('gallery-veil');
+    if(veil) veil.classList.add('lifted');
+  }, 300);
+
+  /* swipe */
+  let tx = 0;
+  section.addEventListener('touchstart', e=>{ tx=e.touches[0].clientX; },{passive:true});
+  section.addEventListener('touchend',   e=>{
     const dx = e.changedTouches[0].clientX - tx;
     if(Math.abs(dx)>40){ clearInterval(gAuto); gNav(dx<0?1:-1); startGAuto(); }
-  }, {passive:true});
+  },{passive:true});
 }
 
 function gShow(i){
   const slides = document.querySelectorAll('.g-slide');
-  const dots   = document.querySelectorAll('.g-dot');
   slides[gIdx].classList.remove('active');
-  dots[gIdx].classList.remove('active');
   gIdx = (i + PHOTOS.length) % PHOTOS.length;
   slides[gIdx].classList.add('active');
-  dots[gIdx].classList.add('active');
   updateGCounter();
+  updateGProgress();
 }
 
 function updateGCounter(){
   const el = document.getElementById('g-counter');
-  if(el) el.textContent = String(gIdx+1).padStart(2,'0')+' / '+String(PHOTOS.length).padStart(2,'0');
+  if(el) el.textContent =
+    String(gIdx+1).padStart(2,'0') + ' / ' + String(PHOTOS.length).padStart(2,'0');
 }
 
-function startGAuto(){ gAuto = setInterval(()=> gShow(gIdx+1), 4000); }
+function updateGProgress(){
+  const bar = document.getElementById('g-progress-bar');
+  if(bar) bar.style.width = ((gIdx+1)/PHOTOS.length*100)+'%';
+}
 
-window.gNav = function(dir){ clearInterval(gAuto); gShow(gIdx+dir); startGAuto(); };
+function startGAuto(){
+  gAuto = setInterval(()=> gShow(gIdx+1), gDuration);
+}
+
+window.gNav = function(dir){
+  clearInterval(gAuto); gShow(gIdx+dir); startGAuto();
+};
+
+/* Lift veil when gallery scrolls into view */
+function initGalleryObserver(){
+  const io = new IntersectionObserver(entries=>{
+    entries.forEach(e=>{
+      if(!e.isIntersecting) return;
+      const veil = document.getElementById('gallery-veil');
+      if(veil) setTimeout(()=> veil.classList.add('lifted'), 200);
+      io.disconnect();
+    });
+  }, { threshold:0.3 });
+  const el = document.getElementById('gallery');
+  if(el) io.observe(el);
+}
 
 /* ─────────────────────────────────────────────
    INTERSECTION OBSERVER — entrance animations
