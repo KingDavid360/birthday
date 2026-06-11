@@ -26,25 +26,35 @@
   ═══════════════════════════════════ */
   #site-video-wrap {
     position:fixed; inset:0; z-index:0;
-    display:none; /* revealed after login */
+    display:none;
+    overflow:hidden;
   }
-  #site-video-wrap video {
-    width:100%; height:100%;
-    object-fit:contain;        /* full video, no cropping */
-    object-position:center;
-    background:#080510;
+  /* LAYER 1 — blurred clone fills every pixel, hides the black bars */
+  #bg-vid-blur {
+    position:absolute; inset:-30px; /* slightly oversize to hide blur edge */
+    width:calc(100% + 60px); height:calc(100% + 60px);
+    object-fit:cover;
+    filter:blur(28px) brightness(.35) saturate(1.4);
     display:block;
   }
-  /* Layered dark overlay so content stays legible */
+  /* LAYER 2 — sharp original, contained so nothing is cropped */
+  #bg-vid {
+    position:absolute; inset:0;
+    width:100%; height:100%;
+    object-fit:contain;
+    object-position:center;
+    display:block;
+  }
+  /* LAYER 3 — dark gradient so text stays legible */
   #site-video-wrap::after {
     content:'';
-    position:absolute; inset:0;
+    position:absolute; inset:0; pointer-events:none;
     background:linear-gradient(
       to bottom,
-      rgba(8,5,16,.72) 0%,
-      rgba(8,5,16,.58) 40%,
-      rgba(8,5,16,.72) 80%,
-      rgba(8,5,16,.88) 100%
+      rgba(8,5,16,.65) 0%,
+      rgba(8,5,16,.45) 40%,
+      rgba(8,5,16,.65) 80%,
+      rgba(8,5,16,.85) 100%
     );
   }
 
@@ -298,68 +308,99 @@
   }
 
   /* ═══════════════════════════════════
-     SECTION: GALLERY
+     SECTION: GALLERY (full-screen world)
   ═══════════════════════════════════ */
   #gallery {
-    padding:4rem 2rem 8rem;
-    max-width:1100px; margin:0 auto;
+    /* Takes the full viewport — its own world */
+    height:100vh;
+    position:relative;
+    overflow:hidden;
+    padding:0;
+    /* Sits above the video bg so it can have its own backdrop */
+    z-index:11;
+    background:#000;
   }
-  .gallery-header {
-    display:flex; align-items:baseline;
-    justify-content:space-between; margin-bottom:2.5rem;
-    border-bottom:1px solid rgba(255,255,255,.07);
-    padding-bottom:1rem;
-  }
-  .gallery-title {
-    font-family:'Cormorant Garamond', serif;
-    font-size:clamp(1.6rem,4vw,2.4rem);
-    font-weight:300; font-style:italic; color:#fff;
-  }
-  .gallery-count { font-size:.7rem; letter-spacing:.14em; color:rgba(255,255,255,.25); }
 
-  /* Masonry-style: 3 columns */
-  .gallery-masonry {
-    columns:3; column-gap:10px;
+  /* Each photo slide */
+  .g-slide {
+    position:absolute; inset:0;
+    opacity:0;
+    transition:opacity 1.1s ease;
   }
-  .gallery-item {
-    break-inside:avoid; margin-bottom:10px;
-    overflow:hidden; position:relative;
-    cursor:pointer;
-    opacity:0; transform:translateY(18px);
-    transition:opacity .7s ease, transform .7s ease;
+  .g-slide.active { opacity:1; }
+  .g-slide img {
+    width:100%; height:100%;
+    object-fit:contain;          /* full photo, no crop */
+    object-position:center;
+    display:block;
+    background:#000;
   }
-  .gallery-item.visible { opacity:1; transform:translateY(0); }
-  .gallery-item img {
-    width:100%; display:block;
-    transition:transform .6s ease, filter .4s ease;
-    filter:brightness(.9) saturate(.85);
+  /* Subtle vignette so edges breathe */
+  .g-slide::after {
+    content:'';
+    position:absolute; inset:0; pointer-events:none;
+    background:radial-gradient(ellipse at center,
+      transparent 55%,
+      rgba(0,0,0,.55) 100%);
   }
-  .gallery-item:hover img {
-    transform:scale(1.03);
-    filter:brightness(1) saturate(1);
-  }
-  /* Lightbox */
-  #lightbox {
-    display:none; position:fixed; inset:0; z-index:8000;
-    background:rgba(8,5,16,.95); backdrop-filter:blur(12px);
-    align-items:center; justify-content:center;
-  }
-  #lightbox.open { display:flex; }
-  #lightbox img {
-    max-width:90vw; max-height:90vh;
-    object-fit:contain; border:none;
-    animation:fadeUp .3s ease both;
-  }
-  #lightbox-close {
-    position:absolute; top:1.5rem; right:1.5rem;
-    font-size:1.5rem; color:rgba(255,255,255,.4);
-    cursor:pointer; background:none; border:none;
-    transition:color .2s;
-  }
-  #lightbox-close:hover { color:#fff; }
 
-  @media(max-width:640px){
-    .gallery-masonry { columns:2; }
+  /* Top label */
+  .gallery-world-label {
+    position:absolute; top:2rem; left:50%;
+    transform:translateX(-50%);
+    z-index:3;
+    font-size:.62rem; letter-spacing:.28em; text-transform:uppercase;
+    color:rgba(255,255,255,.35); white-space:nowrap;
+  }
+
+  /* Caption */
+  .g-caption {
+    position:absolute; bottom:4rem; left:50%;
+    transform:translateX(-50%);
+    z-index:3; text-align:center;
+    font-family:'Cormorant Garamond',serif;
+    font-size:clamp(1rem,2.5vw,1.5rem);
+    font-style:italic; color:rgba(255,255,255,.6);
+    opacity:0; transition:opacity .8s .5s;
+    white-space:nowrap;
+  }
+  .g-slide.active .g-caption { opacity:1; }
+
+  /* Prev / Next */
+  .g-arrow {
+    position:absolute; top:50%; z-index:4;
+    transform:translateY(-50%);
+    background:none; border:none;
+    color:rgba(255,255,255,.25); font-size:2.5rem;
+    cursor:pointer; padding:.5rem 1rem;
+    transition:color .2s; line-height:1;
+    font-weight:200;
+  }
+  .g-arrow:hover { color:rgba(255,255,255,.7); }
+  .g-arrow.left  { left:.5rem; }
+  .g-arrow.right { right:.5rem; }
+
+  /* Progress dots */
+  .g-dots {
+    position:absolute; bottom:1.8rem; left:50%;
+    transform:translateX(-50%);
+    display:flex; gap:.6rem; z-index:4;
+  }
+  .g-dot {
+    width:4px; height:4px; border-radius:50%;
+    background:rgba(255,255,255,.25); cursor:pointer;
+    transition:background .3s, transform .3s;
+  }
+  .g-dot.active {
+    background:rgba(255,255,255,.8);
+    transform:scale(1.4);
+  }
+
+  /* Slide counter */
+  .g-counter {
+    position:absolute; top:2rem; right:2rem; z-index:4;
+    font-size:.62rem; letter-spacing:.14em;
+    color:rgba(255,255,255,.25);
   }
 
   /* ═══════════════════════════════════
@@ -572,7 +613,8 @@
 
 <!-- ── BACKGROUND VIDEOS ── -->
 <div id="site-video-wrap">
-  <video id="bg-vid" autoplay muted playsinline></video>
+  <video id="bg-vid-blur" autoplay muted playsinline></video>
+  <video id="bg-vid"      autoplay muted playsinline></video>
 </div>
 
 <!-- ── MUSIC ── -->
@@ -653,27 +695,35 @@
     </div>
   </section>
 
-  <!-- ── GALLERY ── -->
+  <!-- ── GALLERY (full-screen world) ── -->
   <section id="gallery">
-    <div class="gallery-header">
-      <h2 class="gallery-title">Her World</h2>
-      <span class="gallery-count">06 frames</span>
-    </div>
-    <div class="gallery-masonry" id="gallery-masonry">
-      <!-- injected by JS -->
-    </div>
+    <span class="gallery-world-label">Her World &nbsp;·&nbsp; 06 Frames</span>
+    <span class="g-counter" id="g-counter">01 / 06</span>
+    <!-- Slides injected by JS -->
+    <button class="g-arrow left"  onclick="gNav(-1)">&#8249;</button>
+    <button class="g-arrow right" onclick="gNav(1)">&#8250;</button>
+    <div class="g-dots" id="g-dots"></div>
   </section>
 
-  <!-- Lightbox -->
-  <div id="lightbox">
-    <button id="lightbox-close" onclick="closeLightbox()">✕</button>
-    <img id="lightbox-img" src="" alt=""/>
-  </div>
+  <!-- ── GAME ── -->
+  <section id="game">
+    <h2 class="game-heading">Pop the Love</h2>
+    <p class="game-sub">A small game, just for you</p>
+    <p id="b-meta">Score: <strong id="b-score">0</strong></p>
+    <p id="b-timer-txt">Time: <strong id="b-time">25</strong>s</p>
+    <button id="balloon-start" onclick="startBalloons()">Start</button>
+    <div id="balloon-game-wrap">
+      <div class="game-msg" id="game-msg">
+        Tap to pop each balloon 💕<br/>
+        <span style="font-size:.8rem;opacity:.5">Every pop is a wish sent your way</span>
+      </div>
+    </div>
+  </section>
 
   <!-- ── LETTER ── -->
   <section id="letter">
     <div class="letter-card" id="letter-card">
-      <span class="letter-eyebrow">02 &nbsp;—&nbsp; A Letter</span>
+      <span class="letter-eyebrow">03 &nbsp;—&nbsp; A Letter</span>
       <p class="letter-p">Dear Antoinette,</p>
       <p class="letter-p">
         Birthdays are funny things — they are supposed to be about the person celebrating,
@@ -698,21 +748,6 @@
       <div class="reveal-wrap">
         <button class="reveal-btn" onclick="revealMsg()">Unlock a hidden message</button>
         <div id="hidden-msg">"You make me wanna boogieeee 😂&thinsp;😂&thinsp;😂"</div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ── GAME ── -->
-  <section id="game">
-    <h2 class="game-heading">Pop the Love</h2>
-    <p class="game-sub">A small game, just for you</p>
-    <p id="b-meta">Score: <strong id="b-score">0</strong></p>
-    <p id="b-timer-txt">Time: <strong id="b-time">25</strong>s</p>
-    <button id="balloon-start" onclick="startBalloons()">Start</button>
-    <div id="balloon-game-wrap">
-      <div class="game-msg" id="game-msg">
-        Tap to pop each balloon 💕<br/>
-        <span style="font-size:.8rem;opacity:.5">Every pop is a wish sent your way</span>
       </div>
     </div>
   </section>
@@ -869,57 +904,87 @@ function launchSite(){
 const VIDS=['assets/videos/video1.mp4','assets/videos/video2.mp4','assets/videos/video3.mp4'];
 let vidIdx=0;
 function startVideoCycle(){
-  const v=document.getElementById('bg-vid');
+  const v    = document.getElementById('bg-vid');
+  const blur = document.getElementById('bg-vid-blur');
   function play(){
-    v.src=VIDS[vidIdx];
-    v.load(); v.play().catch(()=>{});
+    const src = VIDS[vidIdx];
+    v.src = src;    v.load();    v.play().catch(()=>{});
+    blur.src = src; blur.load(); blur.play().catch(()=>{});
   }
   play();
-  v.addEventListener('ended',()=>{
-    vidIdx=(vidIdx+1)%VIDS.length;
-    play();
-  });
+  // advance when the sharp copy ends (blur will follow naturally)
+  v.addEventListener('ended',()=>{ vidIdx=(vidIdx+1)%VIDS.length; play(); });
 }
 
 /* ─────────────────────────────────────────────
-   GALLERY BUILD
-   Photos 1-4, 7, 8 only (5 & 6 excluded)
+   GALLERY — full-screen slideshow
+   Photos 1-4, 7, 8  (5 & 6 excluded)
 ───────────────────────────────────────────── */
-const PHOTOS=[
-  'assets/photos/photo7.jpg',
-  'assets/photos/photo4.jpg',
-  'assets/photos/photo1.jpg',
-  'assets/photos/photo3.jpg',
-  'assets/photos/photo2.jpg',
-  'assets/photos/photo8.jpg',
+const PHOTOS = [
+  { src:'assets/photos/photo7.jpg', cap:'Angel energy 💕' },
+  { src:'assets/photos/photo4.jpg', cap:'That smile'      },
+  { src:'assets/photos/photo1.jpg', cap:'Vibe of the day' },
+  { src:'assets/photos/photo3.jpg', cap:'Golden hour'     },
+  { src:'assets/photos/photo2.jpg', cap:'Effortlessly her'},
+  { src:'assets/photos/photo8.jpg', cap:'Serene'          },
 ];
+let gIdx = 0, gAuto = null;
 
 function buildGallery(){
-  const wrap=document.getElementById('gallery-masonry');
-  PHOTOS.forEach((src,i)=>{
-    const item=document.createElement('div');
-    item.className='gallery-item';
-    item.style.transitionDelay=(i*.08)+'s';
-    const img=document.createElement('img');
-    img.src=src; img.alt='Antoinette'; img.loading='lazy';
-    img.onclick=()=>openLightbox(src);
-    item.appendChild(img);
-    wrap.appendChild(item);
+  const section = document.getElementById('gallery');
+  const dotsWrap = document.getElementById('g-dots');
+
+  PHOTOS.forEach((p, i)=>{
+    /* slide */
+    const slide = document.createElement('div');
+    slide.className = 'g-slide' + (i===0 ? ' active' : '');
+    const img = document.createElement('img');
+    img.src = p.src; img.alt = 'Antoinette'; img.loading = 'lazy';
+    const cap = document.createElement('div');
+    cap.className = 'g-caption'; cap.textContent = p.cap;
+    slide.appendChild(img); slide.appendChild(cap);
+    /* insert before the first button so arrows stay on top */
+    section.insertBefore(slide, section.querySelector('.g-arrow'));
+
+    /* dot */
+    const dot = document.createElement('div');
+    dot.className = 'g-dot' + (i===0 ? ' active' : '');
+    dot.onclick = ()=>{ clearInterval(gAuto); gShow(i); startGAuto(); };
+    dotsWrap.appendChild(dot);
   });
+
+  updateGCounter();
+  startGAuto();
+
+  /* swipe support on mobile */
+  let tx=0;
+  const sec = document.getElementById('gallery');
+  sec.addEventListener('touchstart', e=>{ tx=e.touches[0].clientX; }, {passive:true});
+  sec.addEventListener('touchend',   e=>{
+    const dx = e.changedTouches[0].clientX - tx;
+    if(Math.abs(dx)>40){ clearInterval(gAuto); gNav(dx<0?1:-1); startGAuto(); }
+  }, {passive:true});
 }
 
-function openLightbox(src){
-  const lb=document.getElementById('lightbox');
-  document.getElementById('lightbox-img').src=src;
-  lb.classList.add('open');
-  document.addEventListener('keydown',function esc(e){
-    if(e.key==='Escape'){closeLightbox();document.removeEventListener('keydown',esc);}
-  });
+function gShow(i){
+  const slides = document.querySelectorAll('.g-slide');
+  const dots   = document.querySelectorAll('.g-dot');
+  slides[gIdx].classList.remove('active');
+  dots[gIdx].classList.remove('active');
+  gIdx = (i + PHOTOS.length) % PHOTOS.length;
+  slides[gIdx].classList.add('active');
+  dots[gIdx].classList.add('active');
+  updateGCounter();
 }
-function closeLightbox(){ document.getElementById('lightbox').classList.remove('open'); }
-document.getElementById('lightbox').addEventListener('click',function(e){
-  if(e.target===this) closeLightbox();
-});
+
+function updateGCounter(){
+  const el = document.getElementById('g-counter');
+  if(el) el.textContent = String(gIdx+1).padStart(2,'0')+' / '+String(PHOTOS.length).padStart(2,'0');
+}
+
+function startGAuto(){ gAuto = setInterval(()=> gShow(gIdx+1), 4000); }
+
+window.gNav = function(dir){ clearInterval(gAuto); gShow(gIdx+dir); startGAuto(); };
 
 /* ─────────────────────────────────────────────
    INTERSECTION OBSERVER — entrance animations
@@ -932,9 +997,6 @@ function initObserver(){
       // About items
       e.target.querySelectorAll('.about-item').forEach((el,i)=>
         setTimeout(()=>el.classList.add('visible'),i*120));
-      // Gallery items
-      e.target.querySelectorAll('.gallery-item').forEach((el,i)=>
-        setTimeout(()=>el.classList.add('visible'),i*80));
       // Letter
       const lc=document.getElementById('letter-card');
       if(e.target.id==='letter'&&lc) lc.classList.add('visible');
