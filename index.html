@@ -85,7 +85,9 @@
 
     /* Starfield canvas */
     #star-canvas{
-      position:absolute;inset:0;pointer-events:none;
+      position:absolute;inset:0;
+      pointer-events:none;  /* CRITICAL — must not block clicks on login box */
+      z-index:0;
     }
 
     .login-box{
@@ -1326,10 +1328,10 @@ function endBalloonGame(){
   document.getElementById('game-instruction').style.display='block';
 
   let msg='';
-  if(balloonScore>=25)msg='Wow, she's unstoppable!! 🏆💜';
+  if(balloonScore>=25)msg='Wow, she is unstoppable!! 🏆💜';
   else if(balloonScore>=15)msg='Amazing! Every balloon was a wish for you 🌸';
   else if(balloonScore>=8)msg='Not bad at all! 💜 Try again?';
-  else msg='Haha, don't worry — I still love you though 😂💜';
+  else msg='Haha, no worries — I still love you though 😂💜';
 
   document.getElementById('game-instruction').innerHTML=
     `🎈 <strong style="color:var(--violet)">${balloonScore} balloons popped!</strong><br/>
