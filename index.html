@@ -857,6 +857,32 @@
 
 <script>
 /* ─────────────────────────────────────────────
+   BACKGROUND PRELOADER
+   Starts fetching media while the user is still
+   on the login screen so everything is ready
+   the moment they enter the site.
+───────────────────────────────────────────── */
+(function preloadEverything(){
+  /* All gallery photos */
+  MEDIA.forEach(m=>{
+    if(m.type==='photo'){ const i=new Image(); i.src=m.src; }
+  });
+
+  /* First two background videos (fetch headers + start buffering) */
+  ['assets/videos/video1.mp4','assets/videos/video2.mp4'].forEach(src=>{
+    const v=document.createElement('video');
+    v.preload='auto'; v.muted=true; v.src=src; v.load();
+  });
+
+  /* First gallery video */
+  const firstVid=MEDIA.find(m=>m.type==='video');
+  if(firstVid){
+    const v=document.createElement('video');
+    v.preload='auto'; v.muted=true; v.src=firstVid.src; v.load();
+  }
+})();
+
+/* ─────────────────────────────────────────────
    STAR CANVAS (login bg)
 ───────────────────────────────────────────── */
 (function(){
@@ -890,16 +916,30 @@ function checkCode(){
   if(!val){ showErr(err,'Please enter the secret code'); return; }
   if(val==='snoozy'){
     btn.textContent='Opening…'; btn.classList.add('loading'); input.disabled=true;
-    loadYT();   // start music (user gesture)
+    unlockAudio(); // iOS: unlock audio context during this user-gesture tap
+    loadYT();      // start music
     setTimeout(()=>{
       const sc=document.getElementById('login-screen');
       sc.style.transition='opacity .8s ease'; sc.style.opacity='0';
       setTimeout(()=>{ sc.style.display='none'; runEntry(); },800);
     },500);
   } else {
-    showErr(err,'Not quite — think about what I call you');
+    showErr(err,'Not quite, think about what I call you');
     input.value=''; input.focus();
   }
+}
+
+/* iOS Safari requires audio to be triggered inside a direct user gesture.
+   Playing a silent buffer here unlocks the audio context so YouTube
+   can play from the async onReady callback. */
+function unlockAudio(){
+  try{
+    const ac=new(window.AudioContext||window.webkitAudioContext)();
+    const buf=ac.createBuffer(1,1,22050);
+    const src=ac.createBufferSource();
+    src.buffer=buf; src.connect(ac.destination); src.start(0);
+    setTimeout(()=>ac.close(),500);
+  }catch(e){}
 }
 
 function showErr(el,msg){
@@ -1096,8 +1136,8 @@ function gShow(i){
   /* lazy-load + play video on the incoming slide */
   const nextVid = slides[gIdx].querySelector('video');
   if(nextVid){
-    if(!nextVid.src && nextVid.dataset.src){
-      /* first time — set the real src and load it */
+    if(!nextVid.getAttribute('src') && nextVid.dataset.src){
+      /* first time — assign the real src and load it */
       nextVid.src = nextVid.dataset.src;
       nextVid.load();
     }
@@ -1105,10 +1145,10 @@ function gShow(i){
     nextVid.play().catch(()=>{});
   }
 
-  /* also preload the next-next slide's video quietly */
+  /* quietly preload the next slide's video one step ahead */
   const preloadIdx = (gIdx + 1) % MEDIA.length;
   const preVid = slides[preloadIdx] && slides[preloadIdx].querySelector('video');
-  if(preVid && !preVid.src && preVid.dataset.src){
+  if(preVid && !preVid.getAttribute('src') && preVid.dataset.src){
     preVid.src = preVid.dataset.src;
     preVid.load();
   }
