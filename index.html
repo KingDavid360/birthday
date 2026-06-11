@@ -1049,7 +1049,7 @@ function buildGallery(){
     } else {
       media = document.createElement('img');
       media.src = m.src; media.alt = 'Antoinette';
-      media.loading = i===0 ? 'eager' : 'lazy';
+      media.loading = 'eager';
       media.decoding = 'async';
     }
 
