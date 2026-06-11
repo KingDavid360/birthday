@@ -4,7 +4,7 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Happy Birthday, Antoinette 💕</title>
-  <link rel="icon" type="image/jpeg" href="assets/photos/photo6.jpg"/>
+  <link rel="icon" type="image/jpeg" href="assets/photos/photo2.jpg"/>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Jost:wght@200;300;400&display=swap" rel="stylesheet"/>
 
   <style>
@@ -354,6 +354,23 @@
     transition:filter 1.3s ease;
   }
   .g-slide.active img {
+    filter:drop-shadow(0 0 50px rgba(192,132,252,.35))
+           drop-shadow(0 0 100px rgba(212,169,106,.15));
+  }
+
+  /* Video slides — same sizing + glow as photos */
+  .g-slide video {
+    max-width:min(480px, 88vw);
+    max-height:80vh;
+    width:auto; height:auto;
+    display:block;
+    object-fit:contain;
+    filter:drop-shadow(0 0 40px rgba(192,132,252,.25))
+           drop-shadow(0 0 80px rgba(212,169,106,.1));
+    transition:filter 1.3s ease;
+    border-radius:2px;
+  }
+  .g-slide.active video {
     filter:drop-shadow(0 0 50px rgba(192,132,252,.35))
            drop-shadow(0 0 100px rgba(212,169,106,.15));
   }
@@ -718,23 +735,23 @@
 
   <!-- ── ABOUT ── -->
   <section id="about">
-    <p class="section-eyebrow">01 &nbsp;—&nbsp; About Her</p>
+    <p class="section-eyebrow">01 &nbsp;·&nbsp; About Her</p>
     <h2 class="section-heading">All About <span>Antoinette</span></h2>
     <div class="about-grid">
       <div class="about-item">
         <span class="about-num">01</span>
         <h3>Her Energy</h3>
-        <p>She has the sweetest soul — warm, caring, and a personality so attractive it draws you in without her even trying. There is something about the way she shows up that just makes people feel genuinely seen.</p>
+        <p>She has the sweetest soul, warm, caring, and a personality so attractive it draws you in without her even trying. There is something about the way she shows up that just makes people feel genuinely seen.</p>
       </div>
       <div class="about-item">
         <span class="about-num">02</span>
         <h3>Her Laugh</h3>
-        <p>It is contagious and beautiful in the most honest way. It lights up whatever space she is in — and I will be straightforward — it is something I genuinely look forward to.</p>
+        <p>It is contagious and beautiful in the most honest way. It lights up whatever space she is in, and I will be straightforward, it is something I genuinely look forward to.</p>
       </div>
       <div class="about-item">
         <span class="about-num">03</span>
         <h3>Her Mind</h3>
-        <p>I would stay up till 2 a.m. just to hear everything she wants to talk about — and honestly, nothing too. The conversation does not even have to be about something. With her, it just works.</p>
+        <p>I would stay up till 2 a.m. just to hear everything she wants to talk about, and honestly, nothing too. The conversation does not even have to be about something. With her, it just works.</p>
       </div>
       <div class="about-item">
         <span class="about-num">04</span>
@@ -747,8 +764,8 @@
   <!-- ── GALLERY (full-screen world) ── -->
   <section id="gallery">
     <div id="gallery-veil"></div>
-    <span class="gallery-world-label">Her World &nbsp;·&nbsp; 06 Frames</span>
-    <span class="g-counter" id="g-counter">01 / 06</span>
+    <span class="gallery-world-label">Her World &nbsp;·&nbsp; 09 Moments</span>
+    <span class="g-counter" id="g-counter">01 / 09</span>
     <!-- Slides injected by JS -->
     <button class="g-arrow left"  onclick="gNav(-1)">&#8249;</button>
     <button class="g-arrow right" onclick="gNav(1)">&#8250;</button>
@@ -775,22 +792,22 @@
   <!-- ── LETTER ── -->
   <section id="letter">
     <div class="letter-card" id="letter-card">
-      <span class="letter-eyebrow">03 &nbsp;—&nbsp; A Letter</span>
+      <span class="letter-eyebrow">03 &nbsp;·&nbsp; A Letter</span>
       <p class="letter-p">Dear Antoinette,</p>
       <p class="letter-p">
-        Birthdays are funny things — they are supposed to be about the person celebrating,
+        Birthdays are funny things, they are supposed to be about the person celebrating,
         but all they have done for me is make me grateful that June 13th exists.
       </p>
       <p class="letter-p">
         There are people you meet and forget by Tuesday. And then there are people who
-        rearrange something quietly inside you — the kind that makes you consider the
+        rearrange something quietly inside you, the kind that makes you consider the
         person you want to be, the kind that, when you remember them, a small smile
         just appears on your face without asking for permission.
       </p>
       <p class="letter-p">
-        I am not going to say anything dramatic as usual 😂&thinsp;😂, but I will be honest —
+        I am not going to say anything dramatic as usual 😂&thinsp;😂, but I will be honest,
         before I knew you, I was drawn to you. You know how I always tell you that you are
-        such a sweet soul — I kind of already knew that before getting to know you.
+        such a sweet soul, I kind of already knew that before getting to know you.
         I do not know how. But getting to experience this soul has made me want to be
         present for every June 13th of yours, for as long as you will have me.
       </p>
@@ -970,36 +987,48 @@ function startVideoCycle(){
 
 /* ─────────────────────────────────────────────
    GALLERY — full-screen slideshow
-   Photos 1-4, 7, 8  (5 & 6 excluded)
+   Photos 1-4, 7, 8  (5 & 6 excluded) + video 4-6
 ───────────────────────────────────────────── */
-const PHOTOS = [
-  { src:'assets/photos/photo7.jpg', cap:'Angel energy'    },
-  { src:'assets/photos/photo4.jpg', cap:'That smile'      },
-  { src:'assets/photos/photo1.jpg', cap:'Vibe of the day' },
-  { src:'assets/photos/photo3.jpg', cap:'Golden hour'     },
-  { src:'assets/photos/photo2.jpg', cap:'Effortlessly her'},
-  { src:'assets/photos/photo8.jpg', cap:'Serene'          },
+const MEDIA = [
+  { type:'photo', src:'assets/photos/photo7.jpg', cap:'Angel energy'     },
+  { type:'photo', src:'assets/photos/photo4.jpg', cap:'That smile'       },
+  { type:'video', src:'assets/videos/video4.mp4', cap:''                 },
+  { type:'photo', src:'assets/photos/photo1.jpg', cap:'Vibe of the day'  },
+  { type:'photo', src:'assets/photos/photo3.jpg', cap:'Golden hour'      },
+  { type:'video', src:'assets/videos/video5.mp4', cap:''                 },
+  { type:'photo', src:'assets/photos/photo2.jpg', cap:'Effortlessly her' },
+  { type:'photo', src:'assets/photos/photo8.jpg', cap:'Serene'           },
+  { type:'video', src:'assets/videos/video6.mp4', cap:''                 },
 ];
-let gIdx = 0, gAuto = null, gDuration = 4500;
+let gIdx = 0, gAuto = null, gDuration = 5000;
 
 function buildGallery(){
   const section = document.getElementById('gallery');
 
-  PHOTOS.forEach((p, i)=>{
+  MEDIA.forEach((m, i)=>{
     const slide = document.createElement('div');
     slide.className = 'g-slide' + (i===0 ? ' active' : '');
 
-    const img = document.createElement('img');
-    img.src = p.src; img.alt = 'Antoinette';
-    img.loading = i===0 ? 'eager' : 'lazy';
+    let media;
+    if(m.type === 'video'){
+      media = document.createElement('video');
+      media.src = m.src;
+      media.muted = true; media.playsInline = true; media.loop = true;
+      media.preload = 'metadata';
+      if(i===0){ media.autoplay = true; media.play().catch(()=>{}); }
+    } else {
+      media = document.createElement('img');
+      media.src = m.src; media.alt = 'Antoinette';
+      media.loading = i===0 ? 'eager' : 'lazy';
+    }
 
     const line = document.createElement('div');
     line.className = 'g-cap-line';
 
     const cap = document.createElement('div');
-    cap.className = 'g-caption'; cap.textContent = p.cap;
+    cap.className = 'g-caption'; cap.textContent = m.cap;
 
-    slide.appendChild(img);
+    slide.appendChild(media);
     slide.appendChild(line);
     slide.appendChild(cap);
     section.insertBefore(slide, section.querySelector('.g-arrow'));
@@ -1025,9 +1054,18 @@ function buildGallery(){
 
 function gShow(i){
   const slides = document.querySelectorAll('.g-slide');
+  /* pause any playing video on the current slide */
+  const prevVid = slides[gIdx].querySelector('video');
+  if(prevVid){ prevVid.pause(); }
+
   slides[gIdx].classList.remove('active');
-  gIdx = (i + PHOTOS.length) % PHOTOS.length;
+  gIdx = (i + MEDIA.length) % MEDIA.length;
   slides[gIdx].classList.add('active');
+
+  /* play video on the new slide */
+  const nextVid = slides[gIdx].querySelector('video');
+  if(nextVid){ nextVid.currentTime = 0; nextVid.play().catch(()=>{}); }
+
   updateGCounter();
   updateGProgress();
 }
@@ -1035,12 +1073,12 @@ function gShow(i){
 function updateGCounter(){
   const el = document.getElementById('g-counter');
   if(el) el.textContent =
-    String(gIdx+1).padStart(2,'0') + ' / ' + String(PHOTOS.length).padStart(2,'0');
+    String(gIdx+1).padStart(2,'0') + ' / ' + String(MEDIA.length).padStart(2,'0');
 }
 
 function updateGProgress(){
   const bar = document.getElementById('g-progress-bar');
-  if(bar) bar.style.width = ((gIdx+1)/PHOTOS.length*100)+'%';
+  if(bar) bar.style.width = ((gIdx+1)/MEDIA.length*100)+'%';
 }
 
 function startGAuto(){
