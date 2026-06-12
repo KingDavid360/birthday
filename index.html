@@ -858,11 +858,12 @@
 <script>
 /* ─────────────────────────────────────────────
    BACKGROUND PRELOADER
-   Starts fetching media while the user is still
-   on the login screen so everything is ready
-   the moment they enter the site.
+   Runs on window load (after all consts below are
+   defined) so it can safely reference MEDIA.
+   Fetches media while the user is on the login
+   screen so the site is ready the moment they enter.
 ───────────────────────────────────────────── */
-(function preloadEverything(){
+function preloadEverything(){
   /* All gallery photos */
   MEDIA.forEach(m=>{
     if(m.type==='photo'){ const i=new Image(); i.src=m.src; }
@@ -880,7 +881,8 @@
     const v=document.createElement('video');
     v.preload='auto'; v.muted=true; v.src=firstVid.src; v.load();
   }
-})();
+}
+window.addEventListener('load', preloadEverything);
 
 /* ─────────────────────────────────────────────
    STAR CANVAS (login bg)
@@ -1117,7 +1119,6 @@ const MEDIA = [
   { type:'photo', src:'assets/photos/photo1.jpg', cap:'Vibe of the day'  },
   { type:'video', src:'assets/videos/video7.mp4', cap:''                 },
   { type:'photo', src:'assets/photos/photo3.jpg', cap:'Golden hour'      },
-  { type:'video', src:'assets/videos/video5.mp4', cap:''                 },
   { type:'photo', src:'assets/photos/photo2.jpg', cap:'Effortlessly her' },
   { type:'photo', src:'assets/photos/photo8.jpg', cap:'Serene'           },
   { type:'video', src:'assets/videos/video6.mp4', cap:''                 },
