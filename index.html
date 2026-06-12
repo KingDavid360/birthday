@@ -17,6 +17,13 @@
   <meta name="twitter:image"      content="https://kingdavid360.github.io/birthday/assets/photos/photo2.jpg"/>
 
   <link rel="icon" type="image/jpeg" href="assets/photos/photo2.jpg"/>
+
+  <!-- Start fetching the first background + first gallery photo IMMEDIATELY,
+       in parallel with everything else, so they're ready before login ends. -->
+  <link rel="preload" as="image" href="assets/bg/bg1.jpg" fetchpriority="high"/>
+  <link rel="preload" as="image" href="assets/bg/bg2.jpg"/>
+  <link rel="preload" as="image" href="assets/photos/photo7.jpg"/>
+
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Jost:wght@200;300;400&display=swap" rel="stylesheet"/>
 
   <style>
@@ -51,14 +58,16 @@
     background-position:center;
     opacity:0;
     transition:opacity 2s ease-in-out;
-    will-change:opacity, transform;
+    transform:scale(1.06);
   }
+  /* only the active slide gets a GPU layer / drift — keeps memory low */
   .bg-slide.active {
     opacity:1;
-    animation:bgDrift 12s ease-in-out forwards;
+    will-change:opacity;
+    animation:bgDrift 14s ease-in-out forwards;
   }
   @keyframes bgDrift {
-    from { transform:scale(1.05); }
+    from { transform:scale(1.06); }
     to   { transform:scale(1.12); }
   }
   /* LAYER 3 — dark gradient so text stays legible */
@@ -566,16 +575,21 @@
     background:rgba(255,255,255,.02);
     border:1px solid rgba(255,255,255,.06);
     overflow:hidden; cursor:pointer;
+    touch-action:manipulation; /* removes mobile tap delay */
   }
   .balloon {
-    position:absolute; bottom:-80px;
+    position:absolute; bottom:-90px;
     display:flex; flex-direction:column; align-items:center;
     cursor:pointer; animation:riseUp linear forwards; user-select:none;
+    touch-action:manipulation;
+    /* generous invisible tap padding so fingers land easily */
+    padding:14px; margin:-14px;
   }
   .balloon-body {
-    width:44px; height:56px;
+    width:54px; height:66px;
     border-radius:50% 50% 50% 50% / 55% 55% 45% 45%;
     display:flex; align-items:center; justify-content:center;
+    pointer-events:none; /* taps register on the padded .balloon */
     font-size:1.3rem;
     box-shadow:inset -4px -3px 8px rgba(0,0,0,.2);
     position:relative;
@@ -759,12 +773,12 @@
       <div class="about-item">
         <span class="about-num">02</span>
         <h3>Her Laugh</h3>
-        <p>It is contagious and beautiful in the most honest way. It lights up whatever space she is in, and I will be straightforward, it is something I genuinely look forward to.</p>
+        <p>It is contagious and beautiful in the most honest way. It lights up whatever space she is in, and I will be honest, it is something I always look forward to.</p>
       </div>
       <div class="about-item">
         <span class="about-num">03</span>
         <h3>Her Mind</h3>
-        <p>I would stay up till 2 a.m. just to hear everything she wants to talk about, and honestly, nothing too. The conversation does not even have to be about something. With her, it just works.</p>
+        <p>I would stay up till 2 a.m. just to hear everything she wants to talk about, and honestly just to hear her talk about nothing. The conversation does not even have to be about something. With her, it just works.</p>
       </div>
       <div class="about-item">
         <span class="about-num">04</span>
@@ -873,24 +887,33 @@ const BG_IMAGES = [
   'assets/bg/bg5.jpg',
 ];
 
+/* Start fetching the background images RIGHT NOW (BG_IMAGES is already
+   defined above). Don't wait for window 'load' — that delays behind fonts. */
+BG_IMAGES.forEach(src=>{ const i=new Image(); i.src=src; });
+
 function preloadEverything(){
-  /* Background slideshow images */
-  BG_IMAGES.forEach(src=>{ const i=new Image(); i.src=src; });
-  /* All gallery photos */
-  MEDIA.forEach(m=>{ const i=new Image(); i.src=m.src; });
+  /* Gallery photos (MEDIA is defined lower in the script) */
+  if(typeof MEDIA!=='undefined'){
+    MEDIA.forEach(m=>{ const i=new Image(); i.src=m.src; });
+  }
 }
-window.addEventListener('load', preloadEverything);
+/* run once the rest of the script has parsed (MEDIA exists) */
+setTimeout(preloadEverything,0);
 
 /* ─────────────────────────────────────────────
    STAR CANVAS (login bg)
 ───────────────────────────────────────────── */
+let stopStars=false;
 (function(){
   const c=document.getElementById('star-canvas'),ctx=c.getContext('2d'),S=[];
   function r(){c.width=innerWidth;c.height=innerHeight;}r();
   addEventListener('resize',r);
-  for(let i=0;i<180;i++) S.push({x:Math.random()*innerWidth,y:Math.random()*innerHeight,
+  /* fewer stars = lighter on phones */
+  for(let i=0;i<90;i++) S.push({x:Math.random()*innerWidth,y:Math.random()*innerHeight,
     rad:Math.random()*1.2+.2,ph:Math.random()*Math.PI*2,sp:Math.random()*.005+.002});
-  (function loop(){ctx.clearRect(0,0,c.width,c.height);
+  (function loop(){
+    if(stopStars) return; /* stop the loop once we leave the login screen */
+    ctx.clearRect(0,0,c.width,c.height);
     S.forEach(s=>{s.ph+=s.sp;const a=.15+.4*Math.abs(Math.sin(s.ph));
       ctx.beginPath();ctx.arc(s.x,s.y,s.rad,0,Math.PI*2);
       ctx.fillStyle=`rgba(255,255,255,${a})`;ctx.fill();});
@@ -1075,6 +1098,7 @@ function spawnBursts(p){
    LAUNCH SITE
 ───────────────────────────────────────────── */
 function launchSite(){
+  stopStars=true; /* kill the login starfield rAF loop to free memory */
   document.getElementById('site-video-wrap').style.display='block';
   document.getElementById('site-content').style.display='block';
   document.getElementById('site-nav').classList.add('show');
@@ -1282,14 +1306,18 @@ function spawnB(){
   body.textContent='💕';
   const str=document.createElement('div'); str.className='balloon-string';
   b.appendChild(body); b.appendChild(str); wrap.appendChild(b);
-  b.addEventListener('click',ev=>{
-    ev.stopPropagation();
+  function pop(ev){
+    if(ev){ ev.stopPropagation(); ev.preventDefault(); }
     if(b.classList.contains('popped')) return;
     b.classList.add('popped'); b.style.animation='none';
     bSc++; document.getElementById('b-score').textContent=bSc;
     popBurst(wrap,b);
     setTimeout(()=>b.remove(),350);
-  });
+  }
+  /* touchstart fires instantly on phones (no 300ms click delay);
+     click covers desktop. passive:false so preventDefault works. */
+  b.addEventListener('touchstart',pop,{passive:false});
+  b.addEventListener('click',pop);
   setTimeout(()=>{ if(b.parentNode) b.remove(); },dur*1000+300);
 }
 
