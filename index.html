@@ -950,14 +950,20 @@ function showErr(el,msg){
 
 /* ─────────────────────────────────────────────
    YOUTUBE MUSIC  (Perfect — Ed Sheeran)
-   API script loads immediately so the player
-   is warmed up before login completes.
-   playWhenReady flag triggers play the moment
-   the correct code is entered.
+
+   iOS Safari blocks audio that starts outside a
+   direct user tap (async callbacks don't count).
+   Strategy:
+     1. API loads on page open so player is ready.
+     2. On correct login tap → if player ready,
+        unmute + play right inside the gesture (works).
+     3. If player not ready yet → play MUTED when
+        ready (iOS allows muted autoplay), show
+        a "🔇 tap for sound" fab so the user can
+        unmute with their own tap.
 ───────────────────────────────────────────── */
 let ytPlayer=null, ytReady=false, musicOn=false, playWhenReady=false;
 
-/* Load API script right away — no autoplay yet */
 (function(){
   const t=document.createElement('script');
   t.src='https://www.youtube.com/iframe_api';
@@ -968,26 +974,49 @@ window.onYouTubeIframeAPIReady=function(){
   ytPlayer=new YT.Player('yt-player',{
     height:'1',width:'1',
     videoId:'2Vv-BfVoq4g',
-    playerVars:{autoplay:0,loop:1,controls:0,playlist:'2Vv-BfVoq4g',mute:0},
+    playerVars:{autoplay:0,loop:1,controls:0,playlist:'2Vv-BfVoq4g',mute:1},
     events:{onReady:e=>{
       e.target.setVolume(30);
       ytReady=true;
-      if(playWhenReady){ e.target.playVideo(); musicOn=true; }
+      if(playWhenReady){
+        e.target.playVideo(); // muted — iOS allows this
+        musicOn=true;
+        setFabMuted(true);   // prompt user to tap for sound
+      }
     }}
   });
 };
 
-/* Called on correct login — plays immediately if ready, otherwise plays on init */
+/* Called on correct login (inside the tap event) */
 function loadYT(){
   playWhenReady=true;
-  if(ytReady&&ytPlayer){ ytPlayer.playVideo(); musicOn=true; }
+  if(ytReady&&ytPlayer){
+    /* player already ready — unmute+play inside this gesture */
+    ytPlayer.unMute(); ytPlayer.setVolume(30); ytPlayer.playVideo();
+    musicOn=true; setFabMuted(false);
+  }
+  /* else: onReady will fire later, play muted + show tap-for-sound */
+}
+
+function setFabMuted(muted){
+  const fab=document.getElementById('music-fab');
+  if(!fab) return;
+  if(muted){ fab.textContent='🔇'; fab.title='Tap for sound'; fab.dataset.needsUnmute='1'; }
+  else      { fab.textContent='♪';  fab.title='Toggle music';  delete fab.dataset.needsUnmute; }
 }
 
 function toggleMusic(){
   const fab=document.getElementById('music-fab');
   if(!ytPlayer||!ytReady) return;
-  if(musicOn){ytPlayer.pauseVideo();fab.textContent='○';musicOn=false;}
-  else{ytPlayer.playVideo();fab.textContent='♪';musicOn=true;}
+  if(fab.dataset.needsUnmute){
+    /* first tap after muted autoplay — unmute inside this gesture */
+    ytPlayer.unMute(); ytPlayer.setVolume(30);
+    setFabMuted(false); musicOn=true;
+  } else if(musicOn){
+    ytPlayer.pauseVideo(); fab.textContent='○'; musicOn=false;
+  } else {
+    ytPlayer.unMute(); ytPlayer.playVideo(); fab.textContent='♪'; musicOn=true;
+  }
 }
 
 /* ─────────────────────────────────────────────
